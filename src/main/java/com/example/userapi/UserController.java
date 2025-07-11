@@ -1,40 +1,40 @@
 package com.example.userapi;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.userapi.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserService userService;
+
+    // constructor-based dependency injection
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping
     public User addUser(@RequestBody User user) {
-        return userRepository.save(user);
+        return userService.addUser(user);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isEmpty()) return ResponseEntity.notFound().build();
-
-        User user = optionalUser.get();
-        user.setName(userDetails.getName());
-        user.setEmail(userDetails.getEmail());
-        return ResponseEntity.ok(userRepository.save(user));
+        User updatedUser = userService.updateUser(id, userDetails);
+        if (updatedUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        if (!userRepository.existsById(id)) return ResponseEntity.notFound().build();
-
-        userRepository.deleteById(id);
+        boolean deleted = userService.deleteUser(id);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 }
-
